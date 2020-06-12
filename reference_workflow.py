@@ -14,6 +14,7 @@ def prediction_workflow(input_path, input_key,
     f_out = z5py.File(output_path, 'a')
     # we assume that if we have the output dataset the task has passed
     if output_key in f_out:
+        print("Have", output_key, "already, skipping prediction")
         return
 
     ds_out = f_out.create_dataset(output_key, shape=shape, chunks=tuple(block_shape),
@@ -41,6 +42,7 @@ def threshold_workflow(input_path, input_key,
     f_out = z5py.File(output_path, 'a')
     # we assume that if we have the output dataset the task has passed
     if output_key in f_out:
+        print("Have", output_key, "already, skipping thresholding")
         return
 
     ds_out = f_out.create_dataset(output_key, shape=shape, chunks=tuple(block_shape),
@@ -60,7 +62,23 @@ def threshold_workflow(input_path, input_key,
 def connected_components_workflow(input_path, input_key,
                                   output_path, output_key,
                                   n_jobs):
-    pass
+    return
+    f_in = z5py.File(input_path, 'r')
+    ds_in = f_in[input_key]
+    shape = ds_in.shape
+
+    f_out = z5py.File(output_path, 'a')
+    # # we assume that if we have the output dataset the task has passed
+    # if output_key in f_out:
+    #     return
+    ds_out = f_out.require_dataset(output_key, shape=shape, chunks=tuple(block_shape),
+                                   compression='gzip', dtype='uint64')
+    block_lists = ref.blocks_to_jobs(shape, block_shape, n_jobs)
+
+    with futures.ThreadPoolExecutor(n_jobs) as tp:
+        tasks = [tp.submit(ref.label_blocks, ds_in, ds_out, blocks, block_shape)
+                 for blocks in block_lists]
+        [t.result() for t in tasks]
 
 
 if __name__ == '__main__':
