@@ -23,7 +23,8 @@ def prediction_workflow(input_path, input_key,
     channel_id = 1
 
     with futures.ThreadPoolExecutor(n_jobs) as tp:
-        tasks = [tp.submit(ref.predict_blocks, ds_in, ds_out,
+        tasks = [tp.submit(ref.predict_blocks,
+                           ds_in, ds_out,
                            ilastik_bin, ilastik_project,
                            block_shape, blocks, channel_id=channel_id)
                  for blocks in block_lists]
@@ -33,7 +34,27 @@ def prediction_workflow(input_path, input_key,
 def threshold_workflow(input_path, input_key,
                        output_path, output_key,
                        threshold, n_jobs):
-    pass
+    f_in = z5py.File(input_path, 'r')
+    ds_in = f_in[input_key]
+    shape = ds_in.shape
+
+    f_out = z5py.File(output_path, 'a')
+    # we assume that if we have the output dataset the task has passed
+    if output_key in f_out:
+        return
+
+    ds_out = f_out.create_dataset(output_key, shape=shape, chunks=tuple(block_shape),
+                                  compression='gzip', dtype='uint8')
+
+    block_lists = ref.blocks_to_jobs(shape, block_shape, n_jobs)
+    threshold = .5
+
+    with futures.ThreadPoolExecutor(n_jobs) as tp:
+        tasks = [tp.submit(ref.threshold_blocks,
+                           ds_in, ds_out, threshold,
+                           block_shape, blocks)
+                 for blocks in block_lists]
+        [t.result() for t in tasks]
 
 
 def connected_components_workflow(input_path, input_key,
