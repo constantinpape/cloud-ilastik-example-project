@@ -11,6 +11,7 @@ The two first tasks can just be parallelized over blocks; the connected componen
 Ideally, you should use the functions from `reference_impl/` to run the individual steps; you can check out `reference_workflow.py` to see how to connect the pieces.
 
 Some additional considerations when implementing this:
+- Solution should be deployable locally and on the EMBL cluster, additional options would of course be great
 - Robustness to partial (stochastic) failures: you can use the decorators in `reference_impl/job_failure.py` to simulate this.
 - Logging and monitoring task execution
 - Rerunning tasks if intermediate results change
