@@ -10,7 +10,7 @@ def show(in_path, res_path):
         ds.n_threads = 4
         raw = ds[:]
 
-    layers = {'raw': (raw, 'image')}
+    layers = {'raw': (raw, 'image', {})}
 
     prediction_key = 'boundaries'
     threshold_key = 'thresholded'
@@ -20,25 +20,25 @@ def show(in_path, res_path):
             ds = f[prediction_key]
             ds.n_threads = 4
             data = ds[:]
-            layers.update({'prediction': (data, 'image')})
+            layers.update({'prediction': (data, 'image', {})})
 
         if threshold_key in f:
             ds = f[threshold_key]
             ds.n_threads = 4
             data = ds[:]
-            layers.update({'threshold': (data, 'image')})
+            layers.update({'threshold': (data, 'image', {'contrast_limits': [0, 1]})})
 
         if segmentation_key in f:
             ds = f[segmentation_key]
             ds.n_threads = 4
             data = ds[:]
-            layers.update({'segmentation': (data, 'labels')})
+            layers.update({'segmentation': (data, 'labels', {})})
 
     with napari.gui_qt():
         viewer = napari.Viewer()
-        for name, (data, layer_type) in layers.items():
+        for name, (data, layer_type, kwargs) in layers.items():
             func = getattr(viewer, f'add_{layer_type}')
-            func(data, name=name)
+            func(data, name=name, **kwargs)
 
 
 # TODO

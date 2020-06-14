@@ -62,7 +62,6 @@ def threshold_workflow(input_path, input_key,
 def connected_components_workflow(input_path, input_key,
                                   output_path, output_key,
                                   n_jobs):
-    return
     f_in = z5py.File(input_path, 'r')
     ds_in = f_in[input_key]
     shape = ds_in.shape
@@ -71,6 +70,7 @@ def connected_components_workflow(input_path, input_key,
     # # we assume that if we have the output dataset the task has passed
     # if output_key in f_out:
     #     return
+
     ds_out = f_out.require_dataset(output_key, shape=shape, chunks=tuple(block_shape),
                                    compression='gzip', dtype='uint64')
     block_lists = ref.blocks_to_jobs(shape, block_shape, n_jobs)
@@ -78,6 +78,20 @@ def connected_components_workflow(input_path, input_key,
     with futures.ThreadPoolExecutor(n_jobs) as tp:
         tasks = [tp.submit(ref.label_blocks, ds_in, ds_out, blocks, block_shape)
                  for blocks in block_lists]
+        [t.result() for t in tasks]
+
+    ref.find_uniques(n_jobs)
+
+    with futures.ThreadPoolExecutor(n_jobs) as tp:
+        tasks = [tp.submit(ref.merge_faces, ds_out, blocks, block_shape, job_id)
+                 for job_id, blocks in enumerate(block_lists)]
+        [t.result() for t in tasks]
+
+    ref.merge_labels(n_jobs)
+
+    with futures.ThreadPoolExecutor(n_jobs) as tp:
+        tasks = [tp.submit(ref.write_labels, ds_out, blocks, block_shape)
+                 for blocks block_lists]
         [t.result() for t in tasks]
 
 

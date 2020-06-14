@@ -6,7 +6,6 @@ def threshold_block(input_dataset, output_dataset, threshold,
     bounding_box = blocking[block_id]
     data = input_dataset[bounding_box]
     data = (data > threshold).astype('uint8')
-    # print(block_id, data.sum())
     output_dataset[bounding_box] = data
 
 
