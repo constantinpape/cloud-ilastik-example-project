@@ -1,3 +1,4 @@
+import argparse
 from concurrent import futures
 import z5py
 import reference_impl as ref
@@ -34,7 +35,7 @@ def prediction_workflow(input_path, input_key,
 
 def threshold_workflow(input_path, input_key,
                        output_path, output_key,
-                       threshold, n_jobs):
+                       threshold, sigma, n_jobs):
     f_in = z5py.File(input_path, 'r')
     ds_in = f_in[input_key]
     shape = ds_in.shape
@@ -49,11 +50,11 @@ def threshold_workflow(input_path, input_key,
                                   compression='gzip', dtype='uint8')
 
     block_lists = ref.blocks_to_jobs(shape, block_shape, n_jobs)
-    threshold = .5
 
     with futures.ThreadPoolExecutor(n_jobs) as tp:
         tasks = [tp.submit(ref.threshold_blocks,
-                           ds_in, ds_out, threshold,
+                           ds_in, ds_out,
+                           threshold, sigma,
                            block_shape, blocks)
                  for blocks in block_lists]
         [t.result() for t in tasks]
@@ -62,54 +63,62 @@ def threshold_workflow(input_path, input_key,
 def connected_components_workflow(input_path, input_key,
                                   output_path, output_key,
                                   n_jobs):
+    ref.set_up()
+
     f_in = z5py.File(input_path, 'r')
     ds_in = f_in[input_key]
     shape = ds_in.shape
 
     f_out = z5py.File(output_path, 'a')
-    # # we assume that if we have the output dataset the task has passed
-    # if output_key in f_out:
-    #     return
 
     ds_out = f_out.require_dataset(output_key, shape=shape, chunks=tuple(block_shape),
                                    compression='gzip', dtype='uint64')
     block_lists = ref.blocks_to_jobs(shape, block_shape, n_jobs)
 
     with futures.ThreadPoolExecutor(n_jobs) as tp:
-        tasks = [tp.submit(ref.label_blocks, ds_in, ds_out, blocks, block_shape)
-                 for blocks in block_lists]
+        tasks = [tp.submit(ref.label_blocks, ds_in, ds_out, block_shape, blocks, job_id)
+                 for job_id, blocks in enumerate(block_lists)]
         [t.result() for t in tasks]
 
     ref.find_uniques(n_jobs)
 
+    ref.merge_faces(ds_out, block_shape, block_lists[0], 0)
     with futures.ThreadPoolExecutor(n_jobs) as tp:
-        tasks = [tp.submit(ref.merge_faces, ds_out, blocks, block_shape, job_id)
+        tasks = [tp.submit(ref.merge_faces, ds_out, block_shape, blocks, job_id)
                  for job_id, blocks in enumerate(block_lists)]
         [t.result() for t in tasks]
 
     ref.merge_labels(n_jobs)
 
     with futures.ThreadPoolExecutor(n_jobs) as tp:
-        tasks = [tp.submit(ref.write_labels, ds_out, blocks, block_shape)
-                 for blocks block_lists]
+        tasks = [tp.submit(ref.write_labels, ds_out, ds_out, block_shape, blocks)
+                 for blocks in block_lists]
         [t.result() for t in tasks]
+
+    ref.clean_up()
 
 
 if __name__ == '__main__':
-    input_path = './data/sampleA.n5'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input_path', default='data/data_small.n5')
+    parser.add_argument('--output_path', default='data/result_small.n5')
+    args = parser.parse_args()
+
+    input_path = args.input_path
+    output_path = args.output_path
     input_key = 'volumes/raw'
 
-    output_path = './result.n5'
     prediction_key = 'boundaries'
     threshold_key = 'thresholded'
     segmentation_key = 'connected_components'
 
     ilastik_bin = '/home/pape/Work/software/src/ilastik-1.4.0b0-Linux/run_ilastik.sh'
     ilastik_project = './data/example-project.ilp'
-    threshold = .5
+    threshold = .25
+    sigma = 1.6
 
     n_jobs = 4
-    block_shape = [25, 256, 256]
+    block_shape = [64, 64, 64]
 
     prediction_workflow(input_path, input_key,
                         output_path, prediction_key,
@@ -117,7 +126,7 @@ if __name__ == '__main__':
                         block_shape, n_jobs)
     threshold_workflow(output_path, prediction_key,
                        output_path, threshold_key,
-                       threshold, n_jobs)
+                       threshold, sigma, n_jobs)
     connected_components_workflow(output_path, threshold_key,
                                   output_path, segmentation_key,
                                   n_jobs)

@@ -1,5 +1,6 @@
 import argparse
 import z5py
+from skimage.metrics import adapted_rand_error
 
 
 def show(in_path, res_path):
@@ -41,24 +42,33 @@ def show(in_path, res_path):
             func(data, name=name, **kwargs)
 
 
-# TODO
-def validate():
-    pass
+def validate(res_path, exp_path):
+    seg_key = 'connected_components'
+    with z5py.File(res_path, 'r') as f:
+        ds = f[seg_key]
+        res = ds[:]
+    with z5py.File(exp_path, 'r') as f:
+        ds = f[seg_key]
+        exp = ds[:]
+    are, _, _ = adapted_rand_error(exp, res)
+    print("Adapted rand error:", are)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--show', type=int, default=0)
     parser.add_argument('--validate', type=int, default=0)
-    parser.add_argument('--input_path', type=str, default='./data/sampleA.n5')
-    parser.add_argument('--result_path', type=str, default='./result.n5')
+    parser.add_argument('--input_path', type=str, default='data/data_small.n5')
+    parser.add_argument('--result_path', type=str, default='./data/result_small.n5')
+    parser.add_argument('--expected_path', type=str, default='./data/expected_small.n5')
 
     args = parser.parse_args()
     in_path = args.input_path
     res_path = args.result_path
+    exp_path = args.expected_path
 
     if bool(args.show):
         show(in_path, res_path)
 
     if bool(args.validate):
-        validate()
+        validate(res_path, exp_path)
