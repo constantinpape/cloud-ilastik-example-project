@@ -3,7 +3,7 @@
 Reference implementation for the example workflow to evaluate different orchestration frameworks for large scale data processing.
 The goail is to implement the following workflow:
 - Run ilastik pixel classification
-- Threshold the pixel classification result
+- Smooth and threshold the pixel classification result
 - Run connected components on the thresholding result
 
 The two first tasks can just be parallelized over blocks; the connected components require a more "map-reduce" style approach to be parallized over blocks. See below for more details on the additional tasks.
