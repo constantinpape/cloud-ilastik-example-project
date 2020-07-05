@@ -1,9 +1,9 @@
 import argparse
 import z5py
-from skimage.metrics import adapted_rand_error
+from skimage.metrics import variation_of_information
 
 
-def show(in_path, res_path):
+def show(in_path, res_path, expected_path):
     import napari
 
     with z5py.File(in_path, 'r') as f:
@@ -35,6 +35,25 @@ def show(in_path, res_path):
             data = ds[:]
             layers.update({'segmentation': (data, 'labels', {})})
 
+    with z5py.File(expected_path, 'r') as f:
+        if prediction_key in f:
+            ds = f[prediction_key]
+            ds.n_threads = 4
+            data = ds[:]
+            layers.update({'prediction_expected': (data, 'image', {})})
+
+        if threshold_key in f:
+            ds = f[threshold_key]
+            ds.n_threads = 4
+            data = ds[:]
+            layers.update({'threshold_expected': (data, 'image', {'contrast_limits': [0, 1]})})
+
+        if segmentation_key in f:
+            ds = f[segmentation_key]
+            ds.n_threads = 4
+            data = ds[:]
+            layers.update({'segmentation_expected': (data, 'labels', {})})
+
     with napari.gui_qt():
         viewer = napari.Viewer()
         for name, (data, layer_type, kwargs) in layers.items():
@@ -50,10 +69,13 @@ def validate(res_path, exp_path):
     with z5py.File(exp_path, 'r') as f:
         ds = f[seg_key]
         exp = ds[:]
-    are, _, _ = adapted_rand_error(exp, res)
-    print("Adapted rand error:", are)
+    assert res.shape == exp.shape
+    vi0, vi1 = variation_of_information(exp, res)
+    print("variation of information (should be close to zero):", vi0 + vi1)
 
 
+# NOTE the rand error between 'result' and 'expected' will probably not be zero, because of
+# difference in the ilastik prediction and gaussian smoothing due to blocking artifacts
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--show', type=int, default=0)
@@ -68,7 +90,7 @@ if __name__ == '__main__':
     exp_path = args.expected_path
 
     if bool(args.show):
-        show(in_path, res_path)
+        show(in_path, res_path, exp_path)
 
     if bool(args.validate):
         validate(res_path, exp_path)

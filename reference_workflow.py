@@ -112,7 +112,7 @@ if __name__ == '__main__':
     threshold_key = 'thresholded'
     segmentation_key = 'connected_components'
 
-    ilastik_bin = '/home/pape/Work/software/src/ilastik-1.4.0b0-Linux/run_ilastik.sh'
+    ilastik_bin = '/home/pape/Work/software/src/ilastik/ilastik-1.4.0b1-Linux/run_ilastik.sh'
     ilastik_project = './data/example-project.ilp'
     threshold = .25
     sigma = 1.6
