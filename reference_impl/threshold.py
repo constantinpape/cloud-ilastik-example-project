@@ -14,10 +14,14 @@ def threshold_block(input_dataset, output_dataset,
 
 def threshold_blocks(input_dataset, output_dataset,
                      threshold, sigma,
-                     block_shape, block_ids):
+                     block_shape, block_ids,
+                     func=threshold_block):
     shape = input_dataset.shape
     blocking = Blocking(shape, block_shape)
     for block_id in block_ids:
-        threshold_block(input_dataset, output_dataset,
-                        threshold, sigma,
-                        blocking, block_id)
+        func(input_dataset=input_dataset,
+             output_dataset=output_dataset,
+             threshold=threshold,
+             sigma=sigma,
+             blocking=blocking,
+             block_id=block_id)

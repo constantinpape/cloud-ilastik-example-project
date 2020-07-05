@@ -1,5 +1,7 @@
 import argparse
 from concurrent import futures
+from functools import partial
+
 import z5py
 import reference_impl as ref
 
@@ -51,8 +53,14 @@ def threshold_workflow(input_path, input_key,
 
     block_lists = ref.blocks_to_jobs(shape, block_shape, n_jobs)
 
+    # example of running with stochastic failures
+    func = ref.threshold_blocks
+    # func = partial(ref.threshold_blocks, func=ref.simple_failure(ref.threshold.threshold_block))
+    # func = partial(ref.threshold_blocks, func=ref.failure_with_incorrect_output(ref.threshold.threshold_block))
+    # func = partial(ref.threshold_blocks, func=ref.failure_with_corrupted_output(ref.threshold.threshold_block))
+
     with futures.ThreadPoolExecutor(n_jobs) as tp:
-        tasks = [tp.submit(ref.threshold_blocks,
+        tasks = [tp.submit(func,
                            ds_in, ds_out,
                            threshold, sigma,
                            block_shape, blocks)
