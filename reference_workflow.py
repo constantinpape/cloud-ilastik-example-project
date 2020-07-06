@@ -4,6 +4,7 @@ from functools import partial
 
 import z5py
 import reference_impl as ref
+import env
 
 
 def prediction_workflow(input_path, input_key,
@@ -120,7 +121,7 @@ if __name__ == '__main__':
     threshold_key = 'thresholded'
     segmentation_key = 'connected_components'
 
-    ilastik_bin = '/home/pape/Work/software/src/ilastik/ilastik-1.4.0b1-Linux/run_ilastik.sh'
+    ilastik_bin = env.ilastik_bin
     ilastik_project = './data/example-project.ilp'
     threshold = .25
     sigma = 1.6

@@ -7,6 +7,8 @@ import z5py
 from skimage.filters import gaussian
 from skimage.measure import label
 
+import env
+
 CHUNKS = (64,) * 3
 
 
@@ -69,7 +71,7 @@ def connected_components(path):
 
 def expected_results(in_path, out_path):
 
-    ilastik_bin = '/home/pape/Work/software/src/ilastik/ilastik-1.4.0b1-Linux/run_ilastik.sh'
+    ilastik_bin = env.ilastik_bin
     ilastik_project = './data/example-project.ilp'
 
     predict_ilastik(in_path, out_path, ilastik_bin, ilastik_project)

@@ -4,7 +4,10 @@ channels:
 name:
     cloud-ilastik-example
 dependencies:
+    - pip
     - h5py
     - scikit-image
     - tqdm
     - z5py
+    - pip:
+        - napari[all]
