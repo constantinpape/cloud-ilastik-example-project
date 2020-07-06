@@ -1,0 +1,10 @@
+channels:
+    - conda-forge
+    - defaults
+name:
+    cloud-ilastik-example
+dependencies:
+    - h5py
+    - scikit-image
+    - tqdm
+    - z5py
