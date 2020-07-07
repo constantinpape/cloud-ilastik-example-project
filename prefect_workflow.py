@@ -44,7 +44,9 @@ def threshold_blocks(input_path, input_key, output_path, output_key, threshold, 
 
     f_out = z5py.File(output_path, "a")
     # we assume that if we have the output dataset the task has passed
-    ds_out = f_out.require_dataset(output_key, shape=shape, chunks=tuple(block_shape), compression="gzip", dtype="uint8")
+    ds_out = f_out.require_dataset(
+        output_key, shape=shape, chunks=tuple(block_shape), compression="gzip", dtype="uint8"
+    )
 
     # example of running with stochastic failures
     thres_func = ref.threshold_blocks
@@ -54,9 +56,11 @@ def threshold_blocks(input_path, input_key, output_path, output_key, threshold, 
     thres_func(ds_in, ds_out, threshold, sigma, block_shape, blocks)
     return output_path, output_key
 
+
 @task
 def cc_create_temp_dir():
     return tempfile.mkdtemp(prefix="connected_components_")
+
 
 @task
 def cc_label_blocks(input_path, input_key, output_path, output_key, tmp_path, block_shape, blocks):
@@ -75,6 +79,7 @@ def cc_label_blocks(input_path, input_key, output_path, output_key, tmp_path, bl
 def cc_find_uniques(label_paths, tmp_path):
     return cc.find_uniques(label_paths, tmp_path)
 
+
 @task
 def cc_merge_faces(output_path, output_key, block_shape, blocks, tmp_path, labeled_blocks_paths):
     f_out = z5py.File(output_path, "a")
@@ -87,12 +92,14 @@ def cc_merge_faces(output_path, output_key, block_shape, blocks, tmp_path, label
 def cc_merge_labels(unique_labels_path, merge_block_paths, tmp_path):
     return cc.merge_labels(unique_labels_path, merge_block_paths, tmp_path)
 
+
 @task
 def cc_write_labels(output_path, output_key, block_shape, blocks, unique_labels_path, merged_labels_path):
     f_out = z5py.File(output_path, "a")
     ds_out = f_out[output_key]
 
     return cc.write_labels(ds_out, ds_out, unique_labels_path, merged_labels_path, block_shape, blocks)
+
 
 @task
 def cc_remove_temp_dir(tmp_path, **kwargs):
@@ -149,31 +156,31 @@ if __name__ == "__main__":
         flow.set_dependencies(task=cc_temp, upstream_tasks=[threshold_blocks_task])
 
         labeled_blocks_paths = cc_label_blocks.map(
-                input_path=unmapped(output_path), 
-                input_key=unmapped(threshold_key), 
-                output_path=unmapped(output_path), 
-                output_key=unmapped(segmentation_key), 
-                tmp_path=unmapped(cc_temp),
-                blocks=blocks,
-                block_shape=unmapped(block_shape)
+            input_path=unmapped(output_path),
+            input_key=unmapped(threshold_key),
+            output_path=unmapped(output_path),
+            output_key=unmapped(segmentation_key),
+            tmp_path=unmapped(cc_temp),
+            blocks=blocks,
+            block_shape=unmapped(block_shape),
         )
         unique_path = cc_find_uniques(labeled_blocks_paths, cc_temp)
         merged_blocks_paths = cc_merge_faces.map(
-                output_path=unmapped(output_path), 
-                output_key=unmapped(segmentation_key), 
-                tmp_path=unmapped(cc_temp),
-                blocks=blocks,
-                block_shape=unmapped(block_shape),
-                labeled_blocks_paths=labeled_blocks_paths,
+            output_path=unmapped(output_path),
+            output_key=unmapped(segmentation_key),
+            tmp_path=unmapped(cc_temp),
+            blocks=blocks,
+            block_shape=unmapped(block_shape),
+            labeled_blocks_paths=labeled_blocks_paths,
         )
         merged_labels_path = cc_merge_labels(unique_path, merged_blocks_paths, cc_temp)
         write_labels = cc_write_labels.map(
-                output_path=unmapped(output_path), 
-                output_key=unmapped(segmentation_key), 
-                blocks=blocks,
-                block_shape=unmapped(block_shape),
-                unique_labels_path=unmapped(unique_path),
-                merged_labels_path=unmapped(merged_labels_path),
+            output_path=unmapped(output_path),
+            output_key=unmapped(segmentation_key),
+            blocks=blocks,
+            block_shape=unmapped(block_shape),
+            unique_labels_path=unmapped(unique_path),
+            merged_labels_path=unmapped(merged_labels_path),
         )
         cc_remove_temp_dir(cc_temp, res=write_labels)
         flow.run()

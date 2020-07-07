@@ -157,6 +157,7 @@ def merge_labels(unique_labels_path, merge_block_paths, tmp_path):
     np.save(out_path, label_assignment)
     return out_path
 
+
 #
 # Step 4: write the new labels to the volume
 #
