@@ -1,0 +1,7 @@
+project:
+  class: File
+  path: /home/tomaz/MyProject.ilp
+raw_data:
+  class: File
+  path: /home/tomaz/SampleData/c_cells/cropped/cropped2.png
+#output_filename_format: /tmp/my_predictions.h5
