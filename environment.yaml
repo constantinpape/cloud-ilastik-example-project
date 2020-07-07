@@ -9,7 +9,11 @@ dependencies:
     - scikit-image
     - tqdm
     - z5py
+    - dask
+    - zarr
     - pip:
         - napari[all]
         - dagster
         - dagit
+        - structlog
+        - colorama
