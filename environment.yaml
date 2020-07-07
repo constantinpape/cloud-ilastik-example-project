@@ -11,3 +11,5 @@ dependencies:
     - z5py
     - pip:
         - napari[all]
+        - dagster
+        - dagit

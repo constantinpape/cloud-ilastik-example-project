@@ -1,0 +1,11 @@
+solids:
+  prediction:
+    config:
+      ilastik_bin: /Users/em/Downloads/ilastik-1.4.0b7-OSX.app/Contents/ilastik-release/run_ilastik.sh
+      block_shape: [64, 64, 64]
+      n_jobs: 4
+    inputs:
+      input_path: {value: data/data_small.n5}
+      input_key: {value: volumes/raw}
+      output_path: {value: data/result_small.n5}
+      ilastik_project: {value: data/example-project.ilp}

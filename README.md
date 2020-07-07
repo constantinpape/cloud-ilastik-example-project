@@ -46,3 +46,7 @@ It also contains results from the reference implementation (`result_small.n5` / 
 
 You can use the script `validate_output.py` to visually and quantitatively compare results. Note that the results of the reference workflow and the non-parallel implementation do not
 agree fully because of block boundary artifacts in the filter computation.
+
+## Dagster
+
+Run the example pipeline: `dagster pipeline execute -f dagster_workflow.py -e dagster_config.yaml`
